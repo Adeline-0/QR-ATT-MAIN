@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import AppButton from '@/components/AppButton';
 import { COLORS } from '@/constants/colors';
 import { useAuth } from '@/lib/auth';
-import { registerAttendance } from '@/lib/database';
+import { registerAttendance } from '@/lib/attendance';
 
 export default function ScanScreen() {
   const { user } = useAuth();
@@ -23,9 +23,11 @@ export default function ScanScreen() {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Camera Permission Needed</Text>
+
         <Text style={styles.subtitle}>
           We need access to your camera to scan QR codes.
         </Text>
+
         <AppButton
           theme="primary"
           title="Grant Permission"
@@ -39,7 +41,9 @@ export default function ScanScreen() {
   const handleBarcodeScanned = ({ data }: { data: string }) => {
     setScanned(true);
     setLastData(data);
+
     const studentId = user?.id ?? 'unknown';
+
     registerAttendance(data, studentId).then((result) => {
       setMessage(result.message);
       setSuccess(result.success);
@@ -68,7 +72,10 @@ export default function ScanScreen() {
 
         {scanned && message && (
           <Text
-            style={[styles.scanResult, success ? styles.success : styles.error]}
+            style={[
+              styles.scanResult,
+              success ? styles.success : styles.error,
+            ]}
           >
             {message}
           </Text>
@@ -151,4 +158,3 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 });
-

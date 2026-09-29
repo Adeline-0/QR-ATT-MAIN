@@ -10,8 +10,9 @@ import {
   ActivityIndicator,
   TouchableWithoutFeedback,
   Keyboard,
+  Pressable,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AppButton from '@/components/AppButton';
@@ -21,6 +22,8 @@ import { signUp } from '@/lib/auth';
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
+  const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,7 +34,7 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     setError(null);
 
-    if (!email.trim() || !password || !confirmPassword) {
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
       setError('All fields are required.');
       return;
     }
@@ -49,10 +52,19 @@ export default function RegisterScreen() {
     setLoading(true);
 
     try {
-      const { error: authError } = await signUp(email.trim(), password);
+      const { data, error: authError } = await signUp(
+        email.trim(),
+        password,
+        {
+          full_name: fullName.trim(),
+          role,
+        }
+      );
 
       if (authError) {
         setError(authError.message);
+      } else if (data.session) {
+        router.replace('/(tabs)');
       } else {
         setSuccess(true);
       }
@@ -81,14 +93,16 @@ export default function RegisterScreen() {
             </View>
 
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Register to start recording attendance</Text>
+            <Text style={styles.subtitle}>
+              Register to start recording attendance
+            </Text>
 
             {success ? (
               <View style={styles.successContainer}>
                 <Text style={styles.successTitle}>Check your email!</Text>
                 <Text style={styles.successText}>
-                  We sent a confirmation link to {email}. Click the link to verify your
-                  account, then come back and sign in.
+                  We sent a confirmation link to {email}. Click the link to
+                  verify your account, then come back and sign in.
                 </Text>
                 <Link href="/login" style={styles.link}>
                   Back to Sign In
@@ -96,6 +110,54 @@ export default function RegisterScreen() {
               </View>
             ) : (
               <View style={styles.form}>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="Your full name"
+                  placeholderTextColor={COLORS.textSecondary}
+                  autoCapitalize="words"
+                  editable={!loading}
+                />
+
+                <Text style={styles.label}>I am a...</Text>
+                <View style={styles.roleRow}>
+                  <Pressable
+                    style={[
+                      styles.roleChip,
+                      role === 'student' && styles.roleChipActive,
+                    ]}
+                    onPress={() => setRole('student')}
+                  >
+                    <Text
+                      style={[
+                        styles.roleChipText,
+                        role === 'student' && styles.roleChipTextActive,
+                      ]}
+                    >
+                      Student
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[
+                      styles.roleChip,
+                      role === 'teacher' && styles.roleChipActive,
+                    ]}
+                    onPress={() => setRole('teacher')}
+                  >
+                    <Text
+                      style={[
+                        styles.roleChipText,
+                        role === 'teacher' && styles.roleChipTextActive,
+                      ]}
+                    >
+                      Teacher
+                    </Text>
+                  </Pressable>
+                </View>
+
                 <Text style={styles.label}>Email</Text>
                 <TextInput
                   style={styles.input}
@@ -133,7 +195,11 @@ export default function RegisterScreen() {
                 {error && <Text style={styles.error}>{error}</Text>}
 
                 {loading ? (
-                  <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
+                  <ActivityIndicator
+                    size="large"
+                    color={COLORS.primary}
+                    style={styles.loader}
+                  />
                 ) : (
                   <AppButton
                     theme="primary"
@@ -207,6 +273,32 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     color: COLORS.textPrimary,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 4,
+  },
+  roleChip: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.card,
+    alignItems: 'center',
+  },
+  roleChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  roleChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  roleChipTextActive: {
+    color: '#FFFFFF',
   },
   error: {
     fontSize: 14,
